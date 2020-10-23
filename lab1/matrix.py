@@ -242,6 +242,11 @@ class Matrix:
     def __len__(self) -> int:
         return len(self.matrix)
 
+    def __eq__(self, other: Optional['Matrix']) -> bool:
+        if other.shape() != self.shape():
+            return False
+        return self.matrix == other.matrix
+
     def LU_decomposition(self) -> None:
         """Perform inline LU decomposition
 
@@ -276,7 +281,7 @@ class Matrix:
         swaps = 0
         for i in range(selfshape[0]):
             pivot = find_pivot(self, i)
-            if self[i][pivot] == 0:
+            if abs(self[i][pivot]) < 1e-6:
                 raise ZeroDivisionError(
                     'Found pivot with value 0, can\'t solve for singular matrix')
             if pivot != i:
@@ -341,7 +346,7 @@ class Matrix:
             for j in range(i, len(x) - 1):
                 x[i][0] -= self[i][j + 1] * x[j + 1][0]
             try:
-                x[i][0] /= self[i][i]
+                x[i][0] = round(x[i][0] / self[i][i], 6)
             except ZeroDivisionError:
                 raise ZeroDivisionError(
                     'Found element on diagonal with value 0 during backward supstitution')
@@ -491,8 +496,8 @@ if __name__ == "__main__":
         4, 2, 7], [.0000000003, .0000000005, .0000000002]]
     div = Matrix.zeros((3, 3))
     div[0][0] = 10**-6
-    div[1][1] = 10**6
-    div[2][2] = 10**-6
+    div[1][1] = 1
+    div[2][2] = 10**6
     print('Pomnozimo jednadzbe sa:\n{}'.format(div))
     b = Matrix()
     b.matrix = [[9000000000], [15], [.0000000015]]
@@ -505,9 +510,12 @@ if __name__ == "__main__":
     print('x = \n', x)
 
     print_task_num(7)
-    A = Matrix()
-    A.matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-    print(A.LUP_invert())
+    try:
+        A = Matrix()
+        A.matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+        print(A.LUP_invert())
+    except ZeroDivisionError as e:
+        print(e)
 
     print_task_num(8)
     A = Matrix()

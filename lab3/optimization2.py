@@ -155,7 +155,7 @@ def hooke_jeeves(point, f, dx=.5, e=1e-6, verbose=True):
         point ([list]): [starting point]
         f ([TargetFunction]): [function for which minimum needs to be found]
         dx (float, optional): [step size]. Defaults to .5.
-        e ([type], optional): [stopping criteria]. Defaults to 10e-6.
+        e ([float], optional): [stopping criteria]. Defaults to 10e-6.
     Returns:
         [list]: [minimum point find using this method]
     """
@@ -208,7 +208,21 @@ def hooke_jeeves(point, f, dx=.5, e=1e-6, verbose=True):
 
 
 def gradient_descent(f, f_partial, starting_point, e=1e-6, use_golden_cut=False, get_calc=False, limit_iter=-1):
+    """
+    Function that uses gradient descent method for finding minimum of the given function
 
+    Args:
+        f ([TargetFunction]): [function for which minimum needs to be found]
+        f_partial ([list]): [partial derivations for given function]
+        starting_point ([list]): [starting point for optimizations]
+        e ([float], optional): [stopping criteria]. Defaults to 1e-6.
+        use_golden_cut (bool, optional): [use golden cut or not]. Defaults to False.
+        get_calc (bool, optional): [return number of calculations for gradient and hessian matrix]. Defaults to False.
+        limit_iter (int, optional): [number of iterations limitation]. Defaults to -1.
+
+    Returns:
+        [list]: [point for which function is minimal]
+    """
     current_point = starting_point
     div_num = 0
     values = []
@@ -273,7 +287,22 @@ def gradient_descent(f, f_partial, starting_point, e=1e-6, use_golden_cut=False,
 
 
 def newton_raphson(f, f_partial, hessian_matrix, starting_point, e=1e-6, use_golden_cut=False, get_calc=False, limit_iter=-1):
+    """
+    Function that uses Newton Raphson method for finding minimum of the given function
 
+    Args:
+        f ([TargetFunction]): [function for which minimum needs to be found]
+        f_partial ([list]): [partial derivations for given function]
+        hessian_matrix ([list]): [hessian matrix for given function]
+        starting_point ([list]): [starting point for optimizations]
+        e ([float], optional): [stopping criteria]. Defaults to 1e-6.
+        use_golden_cut (bool, optional): [use golden cut or not]. Defaults to False.
+        get_calc (bool, optional): [return number of calculations for gradient and hessian matrix]. Defaults to False.
+        limit_iter (int, optional): [number of iterations limitation]. Defaults to -1.
+
+    Returns:
+        [list]: [point for which function is minimal]
+    """
     current_point = starting_point
     div_num = 0
     values = []
@@ -359,6 +388,22 @@ def newton_raphson(f, f_partial, hessian_matrix, starting_point, e=1e-6, use_gol
 
 
 def no_restriction_transformation(starting_point, f, gs=[], hs=[], dx=.5, e=1e-6, t=1):
+    """Function that transforms function into function with no restrictions 
+        and finds minimum for function for given restrictions,
+        Uses Hooke-Jeeves method for optimizing that function.
+
+    Args:
+        starting_point ([list]): [starting point for optimizations]
+        f ([TargetFunction]): [function for which minimum needs to be found]
+        gs (list, optional): [implicit limitations, lambda expressions]. Defaults to [].
+        hs (list, optional): [implicit limitations, lambda expressions]. Defaults to [].
+        dx (float, optional): [step size]. Defaults to .5.
+        e ([float], optional): [stopping criteria]. Defaults to 1e-6.
+        t (int, optional): [parameter for restrictions]. Defaults to 1.
+
+    Returns:
+        [list]: [point for which function is minimal]
+    """
     values = []
     div_num = 0
 
@@ -405,6 +450,23 @@ def no_restriction_transformation(starting_point, f, gs=[], hs=[], dx=.5, e=1e-6
 
 
 def box_optimizer(f, starting_point, gs=[], x_range=[-1000, 1000], alpha=1.3, epsilon=1e-6, limit_iter=-1):
+    """Finds minimum for function for given restrictions
+
+    Args:
+        f (TargetFunction): [function for which minimum needs to be found] 
+        starting_point ([list]): [starting point for optimizations]
+        gs (list, optional): [implicit limitations, lambda expressions]. Defaults to [].
+        x_range (list, optional): [explicit limitations, range]. Defaults to [-1000, 1000].
+        alpha (float, optional): [alpha for calculating reflection]. Defaults to 1.3.
+        epsilon ([float], optional): [threshold for stopping criteria]. Defaults to 1e-6.
+        limit_iter (int, optional): [maximum iterations]. Defaults to -1.
+
+    Raises:
+        ValueError: [raised in case starting point doesn't match implicit or explicit restrictions]
+
+    Returns:
+        [list]: [point for which function is minimal]
+    """
     X0 = starting_point
 
     for x in X0:

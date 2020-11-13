@@ -1,5 +1,7 @@
 import math
 from matrix import Matrix
+from tabulate import tabulate
+import random
 
 
 class TargetFunction:
@@ -205,23 +207,29 @@ def hooke_jeeves(point, f, dx=.5, e=1e-6, verbose=True):
     return xB
 
 
-def gradient_descent(f, f_partial, starting_point, e=1e-6, use_golden_cut=False):
+def gradient_descent(f, f_partial, starting_point, e=1e-6, use_golden_cut=False, get_calc=False, limit_iter=-1):
 
     current_point = starting_point
     div_num = 0
     values = []
 
+    gradient_calc = 0
+    it = 0
+
     while True:
 
         gradient = []
-
+        gradient_calc += 1
         for partial in f_partial:
             gradient.append(partial(*current_point))
 
         norm = math.sqrt(sum([grad ** 2 for grad in gradient]))
 
         if norm < e:
-            return current_point
+            if get_calc:
+                return current_point, gradient_calc
+            else:
+                return current_point
 
         if use_golden_cut:
             gradient = [grad / norm for grad in gradient]
@@ -243,23 +251,44 @@ def gradient_descent(f, f_partial, starting_point, e=1e-6, use_golden_cut=False)
         if len(values) != 0 and value_f >= values[-1]:
             div_num += 1
 
+        if len(values) != 0 and value_f < values[-1]:
+            div_num = 0
+
         values.append(value_f)
 
         if div_num > 100:
-            print('Divergention detected, breaking loop.')
-            break
+            print(
+                '\033[1m\033[91mDivergention detected, breaking loop.\033[0m\033[0m')
+            return
+
+        if limit_iter > 0 and it >= limit_iter:
+            print(
+                '\033[93mMax iteration {} reached for gradient descent\033[0m'.format(limit_iter))
+            if get_calc:
+                return current_point, gradient_calc
+            else:
+                return current_point
+
+        it += 1
 
 
-def newton_raphson(f, f_partial, hessian_matrix, starting_point, e=1e-6, use_golden_cut=False):
+def newton_raphson(f, f_partial, hessian_matrix, starting_point, e=1e-6, use_golden_cut=False, get_calc=False, limit_iter=-1):
 
     current_point = starting_point
     div_num = 0
     values = []
 
+    gradient_calc = 0
+    hesse_calc = 0
+    it = 0
+
     while True:
 
         gradient_mat = []
         hessian_mat = []
+
+        gradient_calc += 1
+        hesse_calc += 1
 
         for partial in f_partial:
             gradient_mat.append([partial(*current_point)])
@@ -282,7 +311,10 @@ def newton_raphson(f, f_partial, hessian_matrix, starting_point, e=1e-6, use_gol
         norm = math.sqrt(sum([x ** 2 for x in delta_x]))
 
         if norm < e:
-            return current_point
+            if get_calc:
+                return current_point, gradient_calc, hesse_calc
+            else:
+                return current_point
 
         if use_golden_cut:
             delta_x = [x / norm for x in delta_x]
@@ -305,11 +337,25 @@ def newton_raphson(f, f_partial, hessian_matrix, starting_point, e=1e-6, use_gol
         if len(values) != 0 and value_f >= values[-1]:
             div_num += 1
 
+        if len(values) != 0 and value_f < values[-1]:
+            div_num = 0
+
         values.append(value_f)
 
         if div_num > 100:
-            print('Divergention detected, breaking loop.')
-            break
+            print(
+                '\033[1m\033[91mDivergention detected, breaking loop.\033[0m\033[0m')
+            return
+
+        if limit_iter > 0 and it >= limit_iter:
+            print(
+                '\033[93mMax iteration {} reached for newton raphson\033[0m'.format(limit_iter))
+            if get_calc:
+                return current_point, gradient_calc, hesse_calc
+            else:
+                return current_point
+
+        it += 1
 
 
 def no_restriction_transformation(starting_point, f, gs=[], hs=[], dx=.5, e=1e-6, t=1):
@@ -330,9 +376,8 @@ def no_restriction_transformation(starting_point, f, gs=[], hs=[], dx=.5, e=1e-6
     while True:
         def func(*x):
             try:
-                val = f(*x) - (1 / t) * \
-                    sum([math.log(g(*x)) for g in gs]) + \
-                    t * sum([h(*x) ** 2 for h in hs])
+                val = f(*x) - (1 / t) * sum([math.log(g(*x))
+                                             for g in gs]) + t * sum([h(*x) ** 2 for h in hs])
                 return val
             except ValueError:
                 return math.inf
@@ -347,39 +392,199 @@ def no_restriction_transformation(starting_point, f, gs=[], hs=[], dx=.5, e=1e-6
         if len(values) != 0 and value_n >= values[-1]:
             div_num += 1
 
+        if len(values) != 0 and value_n < values[-1]:
+            div_num = 0
+
         values.append(value_n)
         X0 = X0_n
 
         if div_num > 100:
-            pass
-            print('Divergention detected, breaking loop.')
-            break
+            print(
+                '\033[1m\033[91mDivergention detected, breaking loop.\033[0m\033[0m')
+            return
 
 
-def box_optimizer():
-    pass
+def box_optimizer(f, starting_point, gs=[], x_range=[-1000, 1000], alpha=1.3, epsilon=1e-6, limit_iter=-1):
+    X0 = starting_point
+
+    for x in X0:
+        if x > x_range[1] or x < x_range[0]:
+            raise ValueError(
+                "Starting point doesn't meet x_range requirements")
+
+    if len(gs) != 0:
+        for g in gs:
+            if g(*X0) < 0:
+                raise ValueError("Starting point doesn't meet gs requirements")
+
+    n = len(X0)
+
+    Xc = X0
+    Xes = [X0]
+    for _ in range(2 * len(Xc) - 1):
+        r = random.random()
+        X_new = [x_range[0] + r * (x_range[1] - x_range[0])] * len(Xc)
+
+        while any([g(*X_new) < 0 for g in gs]):
+            X_new = [(1 / 2) * (x + c) for x, c in zip(X_new, Xc)]
+
+        Xes.append(X_new)
+
+        Xc = [sum([x[i] for x in Xes]) / len(Xes) for i in range(n)]
+
+    it = 0
+    while True:
+        f_vals = [f(*x) for x in Xes]
+        h = f_vals.index(sorted(f_vals, reverse=True)[0])
+        h2 = f_vals.index(sorted(f_vals, reverse=True)[1])
+
+        Xc = [sum([x[i] for x in Xes if Xes.index(x) != h]) /
+              (len(Xes) - 1) for i in range(n)]
+
+        Xr = [(1 + alpha) * Xc[i] - alpha * Xes[h][i] for i in range(n)]
+
+        for i in range(n):
+            if Xr[i] < x_range[0]:
+                Xr[i] = x_range[0]
+            elif Xr[i] > x_range[1]:
+                Xr[i] = x_range[1]
+
+        while any([g(*Xr) < 0 for g in gs]):
+            Xr = [(1 / 2) * (x + c) for x, c in zip(Xr, Xc)]
+
+        if f(*Xr) > f(*Xes[h2]):
+            Xr = [(1 / 2) * (x + c) for x, c in zip(Xr, Xc)]
+
+        Xes[h] = Xr
+
+        if math.sqrt((1/len(Xes)) * sum([(f(*Xes[i]) - f(*Xc)) ** 2 for i in range(len(Xes))])) <= epsilon:
+            f_vals = [f(*x) for x in Xes]
+            return Xes[f_vals.index(min(f_vals))]
+
+        if limit_iter > 0 and it >= limit_iter:
+            print(
+                '\033[93mMax iteration {} reached for box optimizer\033[0m'.format(limit_iter))
+            f_vals = [f(*x) for x in Xes]
+            return Xes[f_vals.index(min(f_vals))]
+
+        it += 1
+
+
+def print_task_num(num):
+    print()
+    print('#' * 40, 'zadatak ', num, '#' * 40)
+    print()
 
 
 def main():
-    f = TargetFunction(lambda x1, x2: (x1 - 4) ** 2 + 4 * (x2 - 2) ** 2)
-    min_x = gradient_descent(f, [lambda x1, x2: 2 * (x1 - 4), lambda x1,
-                                 x2: 8 * (x2 - 2)], starting_point=[0, 0], use_golden_cut=True)
-    print(min_x)
-    print(f.no_calls)
-    f.reset()
+    random.seed(40)
+    f1 = TargetFunction(lambda x1, x2: 100 * (x2 - x1 ** 2)
+                        ** 2 + (1 - x1) ** 2)
+    f1_partial = [lambda x1, x2: 2 * (200 * x1 ** 3 - 200 * x1 * x2 + x1 - 1),
+                  lambda x1, x2: 200 * (x2 - x1 ** 2)]
+    f1_hessian = [[lambda x1, x2: 2 * (600 * x1 ** 2 - 200 * x2 + 1), lambda x1, x2: -400 * x1],
+                  [lambda x1, x2: -400 * x1, lambda x1, x2: 200]]
+    f2 = TargetFunction(lambda x1, x2: (x1 - 4) ** 2 + 4 * (x2 - 2) ** 2)
+    f2_partial = [lambda x1, x2: 2 * (x1 - 4), lambda x1, x2: 8 * (x2 - 2)]
+    f2_hessian = [[lambda x1, x2: 2, lambda x1, x2: 0],
+                  [lambda x1, x2: 0, lambda x1, x2: 8]]
+    f3 = TargetFunction(lambda x1, x2: (x1 - 2) ** 2 + (x2 + 3) ** 2)
+    f3_partial = [lambda x1, x2: 2 * (x1 - 2), lambda x1, x2: 2 * (x2 + 3)]
+    f3_hessian = [[lambda x1, x2: 2, lambda x1, x2: 0],
+                  [lambda x1, x2: 0, lambda x1, x2: 2]]
+    f4 = TargetFunction(lambda x1, x2: (x1 - 3) ** 2 + x2 ** 2)
 
-    min_x = newton_raphson(f, [lambda x1, x2: 2 * (x1 - 4), lambda x1, x2: 8 * (x2 - 2)],
-                           [[lambda x1, x2: 2, lambda x1, x2: 0],
-                            [lambda x1, x2: 0, lambda x1, x2: 8]],
-                           starting_point=[0, 0], use_golden_cut=True)
-    print(min_x)
-    print(f.no_calls)
+    ######################################## zadatak  1 ########################################
+    print_task_num(1)
+    print('Gradijentni spust bez određivanja optimalnog iznosa')
+    gradient_descent(f3, f3_partial, [0, 0], use_golden_cut=False)
+    f3.reset()
+    print('Gradijentni spust sa određivanjem optimalnog iznosa')
+    min_x, gradient_calc = gradient_descent(
+        f3, f3_partial, [0, 0], use_golden_cut=True, get_calc=True)
+    print('Nađen minimum za točku {} i vrijednost funkcije {}. Broj računanja gradijenta: {}'.format(
+        min_x, f3(*min_x), gradient_calc))
 
-    min_x = no_restriction_transformation(
-        [2, 1], f, hs=[lambda x1, x2: x2 - x1])
+    ######################################## zadatak  2 ########################################
+    print_task_num(2)
+    print('Function 1')
+    gradient_min, gradient_calc = gradient_descent(
+        f1, f1_partial, [-1.9, 2], use_golden_cut=True, get_calc=True, limit_iter=10000)
+    gradient = [gradient_min, f1(*gradient_min), gradient_calc, 0, f1.no_calls]
+    f1.reset()
+    newton_min, newton_grad_calc, newton_hesse_calc = newton_raphson(
+        f1, f1_partial, f1_hessian, [-1.9, 2], use_golden_cut=True, get_calc=True, limit_iter=10000)
+    newton = [newton_min, f1(*newton_min), newton_grad_calc,
+              newton_hesse_calc, f1.no_calls]
+    f1.reset()
 
-    print(min_x)
-    print(f.no_calls)
+    print(tabulate([['Gradient descent'] + gradient, ['Newton-Raphson'] + newton],
+                   headers=['', 'Minimum point', 'Minimum value', 'Number of gradient calculations', 'Number of Hessian calculations', 'Function calls'], tablefmt='orgtbl'))
+
+    print()
+    print('Function 2')
+    gradient_min, gradient_calc = gradient_descent(
+        f2, f2_partial, [0.1, 0.3], use_golden_cut=True, get_calc=True)
+    gradient = [gradient_min, f2(*gradient_min), gradient_calc, 0, f2.no_calls]
+    f2.reset()
+    newton_min, newton_grad_calc, newton_hesse_calc = newton_raphson(
+        f2, f2_partial, f2_hessian, [0.1, 0.3], use_golden_cut=True, get_calc=True)
+    newton = [newton_min, f2(*newton_min), newton_grad_calc,
+              newton_hesse_calc, f2.no_calls]
+    f2.reset()
+
+    print(tabulate([['Gradient descent'] + gradient, ['Newton-Raphson'] + newton],
+                   headers=['', 'Minimum point', 'Minimum value', 'Number of gradient calculations', 'Number of Hessian calculations', 'Function calls'], tablefmt='orgtbl'))
+
+    ######################################## zadatak  3 ########################################
+    print_task_num(3)
+
+    gs = [lambda x1, x2: x2 - x1, lambda x1, x2: 2 - x1]
+    x_range = [-100, 100]
+
+    print('Function 1')
+    min_x = box_optimizer(f1, [-1.9, 2], gs, x_range)
+    print('Nađen minimum za točku {} i vrijednost funkcije {}.'.format(
+        min_x, f1(*min_x)))
+    f1.reset()
+
+    print('Function 2')
+    min_x = box_optimizer(f2, [0.1, 0.3], gs, x_range)
+    print('Nađen minimum za točku {} i vrijednost funkcije {}.'.format(
+        min_x, f2(*min_x)))
+    f2.reset()
+
+    ######################################## zadatak  4 ########################################
+    print_task_num(4)
+    gs = [lambda x1, x2: x2 - x1, lambda x1, x2: 2 - x1]
+
+    print('Function 1')
+    min_x = no_restriction_transformation([-1.9, 2], f1, gs=gs)
+    print('Nađen minimum s početnom točkom {} za točku {} i vrijednost funkcije {}.'.format(
+        [-1.9, 2], min_x, f1(*min_x)))
+
+    print('Traženje iz bolje početne točke...')
+
+    min_x = no_restriction_transformation([3, 3], f1, gs=gs)
+    print('Nađen minimum s početnom točkom {} za točku {} i vrijednost funkcije {}.'.format(
+        [3, 3], min_x, f1(*min_x)))
+
+    print()
+    print('Function 2')
+    min_x = no_restriction_transformation([0.1, 0.3], f2, gs=gs)
+    print('Nađen minimum s početnom točkom {} za točku {} i vrijednost funkcije {}.'.format(
+        [0.1, 0.3], min_x, f2(*min_x)))
+
+    print('Nađen je najbolji mogući minimum uz restrikcije')
+
+    ######################################## zadatak  5 ########################################
+    print_task_num(5)
+    gs = [lambda x1, x2: 3 - x1 - x2, lambda x1,
+          x2: 3 + 1.5 * x1 - x2, lambda x1, x2: x2 - 1]
+
+    min_x = no_restriction_transformation([5, 5], f3, gs=gs)
+    print('Nađen minimum s početnom točkom {} za točku {} i vrijednost funkcije {}.'.format(
+        [5, 5], min_x, f3(*min_x)))
 
 
 if __name__ == "__main__":

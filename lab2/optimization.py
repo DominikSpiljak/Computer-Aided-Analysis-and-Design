@@ -3,6 +3,7 @@ from tabulate import tabulate
 import random
 from tqdm import tqdm
 
+
 class TargetFunction:
     """Function class used for optimization, counts calls and saves calculated results
     """
@@ -32,7 +33,7 @@ class TargetFunction:
             result = self.f(*args)
             self.results[args] = result
             return result
-    
+
     def reset_counter(self):
         self.no_calls = 0
 
@@ -44,7 +45,8 @@ class TargetFunction:
     def predefine_params(self, params, missing):
         self.params = params
         self.missing = missing
-        
+
+
 def unimodal_interval(point, h, f):
     """Finds interval that contains 1-D function minimum
 
@@ -61,9 +63,9 @@ def unimodal_interval(point, h, f):
     m = point
     step = 1
 
-    fm = f(point);
-    fl = f(l);
-    fr = f(r);
+    fm = f(point)
+    fl = f(l)
+    fr = f(r)
 
     if fm < fr and fm < fl:
         pass
@@ -76,8 +78,7 @@ def unimodal_interval(point, h, f):
             step *= 2
             r = point + h * step
             fr = f(r)
-        
-		
+
     else:
         while fm > fl:
             r = m
@@ -88,6 +89,7 @@ def unimodal_interval(point, h, f):
             fl = f(l)
 
     return [l, r]
+
 
 def golden_cut(start, f, e=1e-6, h=None, verbose=True):
     """[Performs golden cut to narrow the interval]
@@ -106,10 +108,11 @@ def golden_cut(start, f, e=1e-6, h=None, verbose=True):
     """
     if type(start) != list:
         if h is None:
-            raise ValueError('No interval was given but step h not defined for unimodal interval')
+            raise ValueError(
+                'No interval was given but step h not defined for unimodal interval')
 
         interval = unimodal_interval(start, h, f)
-    
+
     else:
         interval = start
 
@@ -126,7 +129,8 @@ def golden_cut(start, f, e=1e-6, h=None, verbose=True):
 
     if verbose:
         print('Iteration {}:'.format(iteration))
-        print('a = {}, f(a) = {} | c = {}, f(c) = {} | d = {}, f(d) = {} | b = {}, f(b) = {}'.format(a, f(a), c, f(c), d, f(d), b, f(b)))
+        print('a = {}, f(a) = {} | c = {}, f(c) = {} | d = {}, f(d) = {} | b = {}, f(b) = {}'.format(
+            a, f(a), c, f(c), d, f(d), b, f(b)))
 
     while (b - a) > e:
 
@@ -145,12 +149,14 @@ def golden_cut(start, f, e=1e-6, h=None, verbose=True):
             d = a + k * (b - a)
             fc = fd
             fd = f(d)
-        
+
         if verbose:
             print('Iteration {}:'.format(iteration))
-            print('a = {}, f(a) = {} | c = {}, f(c) = {} | d = {}, f(d) = {} | b = {}, f(b) = {}'.format(a, f(a), c, f(c), d, f(d), b, f(b)))
-    
+            print('a = {}, f(a) = {} | c = {}, f(c) = {} | d = {}, f(d) = {} | b = {}, f(b) = {}'.format(
+                a, f(a), c, f(c), d, f(d), b, f(b)))
+
     return [a, b]
+
 
 def hooke_jeeves(point, f, dx=.5, e=1e-6, verbose=True):
     """[Performs Hooke Jeeves method to find minimum of the function]
@@ -166,19 +172,18 @@ def hooke_jeeves(point, f, dx=.5, e=1e-6, verbose=True):
     def find(xP, f, dx):
         xN = xP.copy()
         for i in range(len(xP)):
-           p = f(*xN)
-           xN[i] += dx
-           n = f(*xN)
+            p = f(*xN)
+            xN[i] += dx
+            n = f(*xN)
 
-           if n > p:
-               xN[i] -= 2 * dx
-               n = f(*xN)
+            if n > p:
+                xN[i] -= 2 * dx
+                n = f(*xN)
 
-               if n > p:
-                   xN[i] += dx
+                if n > p:
+                    xN[i] += dx
 
         return xN
-
 
     xB = point.copy()
     xP = point.copy()
@@ -192,21 +197,25 @@ def hooke_jeeves(point, f, dx=.5, e=1e-6, verbose=True):
 
         if verbose:
             print('Iteration {}:'.format(iteration))
-            print('\txB = {}, f(xB) = {} | xP = {}, f(xP) = {} | xN = {}, f(xN) = {} || f(xB) > f(xN): {} {}'.format(xB, f(*xB), 
-                                                                                                                xP, f(*xP), 
-                                                                                                                xN, f(*xN),
-                                                                                                                f(*xB) > f(*xN),
-                                                                                                                ', dx = {}'.format(dx / 2) if f(*xB) <= f(*xN) else ''))
+            print('\txB = {}, f(xB) = {} | xP = {}, f(xP) = {} | xN = {}, f(xN) = {} || f(xB) > f(xN): {} {}'.format(xB, f(*xB),
+                                                                                                                     xP, f(
+                                                                                                                         *xP),
+                                                                                                                     xN, f(
+                                                                                                                         *xN),
+                                                                                                                     f(*xB) > f(
+                                                                                                                         *xN),
+                                                                                                                     ', dx = {}'.format(dx / 2) if f(*xB) <= f(*xN) else ''))
 
         if f(*xN) < f(*xB):
             xP = [2 * xN[i] - xB[i] for i in range(len(xN))]
             xB = xN
-        
+
         else:
             dx /= 2
             xP = xB
-    
+
     return xB
+
 
 def nelder_mead_simplex(point, f, dx=1, e=1e-6, alpha=1, beta=0.5, gamma=2, sigma=.5, verbose=True):
     simplex_points = [point.copy()]
@@ -218,30 +227,32 @@ def nelder_mead_simplex(point, f, dx=1, e=1e-6, alpha=1, beta=0.5, gamma=2, sigm
     iteration = 0
 
     while True:
-        #Calculate h and l
+        # Calculate h and l
         simplex_values = [f(*simplex) for simplex in simplex_points]
         h = simplex_values.index(max(simplex_values))
         l = simplex_values.index(min(simplex_values))
 
-        #Calculate centroid
-        no_h_simplex_points = [simplex_points[i] for i in range(len(simplex_points)) if i != h]
+        # Calculate centroid
+        no_h_simplex_points = [simplex_points[i]
+                               for i in range(len(simplex_points)) if i != h]
         Xc = []
         for i in range(len(point)):
             dim_point = 0
             for point in no_h_simplex_points:
                 dim_point += point[i]
             Xc.append(dim_point / len(no_h_simplex_points))
-        
+
         if verbose:
             print('Iteration: {}'.format(iteration))
             print('Centroid = {}, f(Centroid) = {}'.format(Xc, f(*Xc)))
         iteration += 1
 
-        #Reflect
-        Xr = [(1 + alpha) * Xc[i] - alpha * simplex_points[h][i] for i in range(len(Xc))]
+        # Reflect
+        Xr = [(1 + alpha) * Xc[i] - alpha * simplex_points[h][i]
+              for i in range(len(Xc))]
 
         if f(*Xr) < f(*simplex_points[l]):
-            #Expand
+            # Expand
             Xe = [(1 - gamma) * Xc[i] + gamma * Xr[i] for i in range(len(Xc))]
 
             if f(*Xe) < f(*simplex_points[l]):
@@ -253,16 +264,18 @@ def nelder_mead_simplex(point, f, dx=1, e=1e-6, alpha=1, beta=0.5, gamma=2, sigm
             if all([f(*Xr) > f(*point) for point in no_h_simplex_points]):
                 if f(*Xr) < f(*simplex_points[h]):
                     simplex_points[h] = Xr
-                
+
                 # Contract
-                Xk = [(1 - beta) * Xc[i] + beta * simplex_points[h][i] for i in range(len(Xc))]
+                Xk = [(1 - beta) * Xc[i] + beta * simplex_points[h][i]
+                      for i in range(len(Xc))]
 
                 if f(*Xk) < f(*simplex_points[h]):
                     simplex_points[h] = Xk
-                
+
                 else:
                     for i in range(len(simplex_points)):
-                        simplex_points[i] = [(1 / 2) * (simplex_points[i][j] + simplex_points[l][j]) for j in range(len(simplex_points[i]))]
+                        simplex_points[i] = [
+                            (1 / 2) * (simplex_points[i][j] + simplex_points[l][j]) for j in range(len(simplex_points[i]))]
             else:
                 simplex_points[h] = Xr
 
@@ -274,6 +287,7 @@ def nelder_mead_simplex(point, f, dx=1, e=1e-6, alpha=1, beta=0.5, gamma=2, sigm
                     dim_point += simplex_point[k]
                 Xc.append(dim_point / len(simplex_points))
             return Xc
+
 
 def coordinate_axes_search(point, f, e=1e-6, h=1, verbose=True):
     x = point.copy()
@@ -287,18 +301,20 @@ def coordinate_axes_search(point, f, e=1e-6, h=1, verbose=True):
         if math.sqrt(sum([(x[i] - xs[i])**2 for i in range(len(x))])) <= e:
             return x
 
+
 def print_task_num(num):
     print()
     print('#' * 40, 'zadatak ', num, '#' * 40)
     print()
 
-def main():
-    f1 = lambda x, y: 100 * (y - x ** 2) ** 2 + (1 - x) ** 2
-    f2 = lambda x, y: (x - 4) ** 2 + 4 * (y - 2) ** 2
-    f3 = lambda *args: sum([(args[j] - j)**2 for j in range(len(args))])
-    f4 = lambda x, y: abs((x - y) * (x + y)) + math.sqrt(x ** 2 + y ** 2)
-    f6 = lambda *args: .5 + ((math.sin(sum([x ** 2 for x in args])) ** 2 - .5) / (1 + .001 * sum([x ** 2 for x in args])) ** 2)
 
+def main():
+    def f1(x, y): return 100 * (y - x ** 2) ** 2 + (1 - x) ** 2
+    def f2(x, y): return (x - 4) ** 2 + 4 * (y - 2) ** 2
+    f3 = lambda *args: sum([(args[j] - j)**2 for j in range(len(args))])
+    def f4(x, y): return abs((x - y) * (x + y)) + math.sqrt(x ** 2 + y ** 2)
+    f6 = lambda *args: .5 + ((math.sin(sum([x ** 2 for x in args])) ** 2 - .5) / (
+        1 + .001 * sum([x ** 2 for x in args])) ** 2)
 
     ######################################## zadatak  1 ########################################
     print_task_num(1)
@@ -306,29 +322,32 @@ def main():
     for point in [10, 50, 100]:
         print('####### Početna točka: {} #######'.format(point))
         print('Zlatni rez: ')
-        print('Interval: {}, broj evaluacija funkcije: {}'.format(golden_cut(point, tf, h=1, verbose=False), tf.no_calls))
+        print('Interval: {}, broj evaluacija funkcije: {}'.format(
+            golden_cut(point, tf, h=1, verbose=False), tf.no_calls))
         print()
         tf.reset_counter()
 
         print('Pretraživanje po koordinatnim osima: ')
-        print('Točka: {}, broj evaluacija funkcije: {}'.format(coordinate_axes_search([point], tf, h=1, verbose=False), tf.no_calls))
+        print('Točka: {}, broj evaluacija funkcije: {}'.format(
+            coordinate_axes_search([point], tf, h=1, verbose=False), tf.no_calls))
         print()
         tf.reset_counter()
 
         print('Simpleks postupak po Nelderu i Meadu: ')
-        print('Centroid: {}, broj evaluacija funkcije: {}'.format(nelder_mead_simplex([point], tf, verbose=False), tf.no_calls))
+        print('Centroid: {}, broj evaluacija funkcije: {}'.format(
+            nelder_mead_simplex([point], tf, verbose=False), tf.no_calls))
         print()
         tf.reset_counter()
 
         print('Postupak Hooke-Jeeves: ')
-        print('Točka: {}, broj evaluacija funkcije: {}'.format(hooke_jeeves([point], tf, verbose=False), tf.no_calls))
+        print('Točka: {}, broj evaluacija funkcije: {}'.format(
+            hooke_jeeves([point], tf, verbose=False), tf.no_calls))
         print()
         tf.reset_counter()
 
-
     ######################################## zadatak  2 ########################################
     print_task_num(2)
-    tf1 = TargetFunction(f1) 
+    tf1 = TargetFunction(f1)
     tf2 = TargetFunction(f2)
     tf3 = TargetFunction(f3)
     tf4 = TargetFunction(f4)
@@ -346,25 +365,25 @@ def main():
 
     print('Minimumi: ')
     print(tabulate([['Nelder-Mead simplex'] + minimums[0], ['Hooke-Jeeves'] + minimums[1], ['Pretraživanje po koordinatnim osima'] + minimums[2]],
-                     headers=['Optimizator \ Function', 'f1', 'f2', 'f3', 'f4'], tablefmt='orgtbl'))
+                   headers=['Optimizator \ Function', 'f1', 'f2', 'f3', 'f4'], tablefmt='orgtbl'))
     print()
     print('Broj evaluacija funkcije: ')
     print(tabulate([['Nelder-Mead simplex'] + func_calls[0], ['Hooke-Jeeves'] + func_calls[1], ['Pretraživanje po koordinatnim osima'] + func_calls[2]],
-                     headers=['Optimizator \ Function', 'f1', 'f2', 'f3', 'f4'], tablefmt='orgtbl'))
-
+                   headers=['Optimizator \ Function', 'f1', 'f2', 'f3', 'f4'], tablefmt='orgtbl'))
 
     ######################################## zadatak  3 ########################################
     print_task_num(3)
     optimizers = [nelder_mead_simplex, hooke_jeeves, coordinate_axes_search]
-    optimizer_names = ['Nelder-Mead simplex', 'Hooke-Jeeves', 'Pretraživanje po koordinatnim osima']
+    optimizer_names = ['Nelder-Mead simplex',
+                       'Hooke-Jeeves', 'Pretraživanje po koordinatnim osima']
     tf4.reset()
     for optimizer, optimizer_name in zip(optimizers, optimizer_names):
         print('Pokrecem {}'.format(optimizer_name))
         min_point = optimizer([5, 5], tf4, verbose=False)
         tf4.reset()
-        print('Nađen minimum za točku {} sa vrijednosti {}'.format(min_point, tf4(*min_point)))
+        print('Nađen minimum za točku {} sa vrijednosti {}'.format(
+            min_point, tf4(*min_point)))
         print()
-
 
     ######################################## zadatak  4 ########################################
     print_task_num(4)
@@ -373,7 +392,7 @@ def main():
     minimums = [[], []]
     func_calls = [[], []]
     dxs = [dx for dx in range(1, 20, 5)]
-    
+
     for i, point in enumerate(points):
         for dx in dxs:
             min_point = nelder_mead_simplex(point, tf1, dx=dx, verbose=False)
@@ -383,11 +402,11 @@ def main():
 
     print('Minimumi: ')
     print(tabulate([['[0.5, 0.5]'] + minimums[0], ['[20, 20]'] + minimums[1]],
-                     headers=['Point \ dx'] + dxs, tablefmt='orgtbl'))
+                   headers=['Point \ dx'] + dxs, tablefmt='orgtbl'))
     print()
     print('Broj evaluacija funkcije: ')
     print(tabulate([['[0.5, 0.5]'] + func_calls[0], ['[20, 20]'] + func_calls[1]],
-                     headers=['Point \ dx'] + dxs, tablefmt='orgtbl'))
+                   headers=['Point \ dx'] + dxs, tablefmt='orgtbl'))
 
     ######################################## zadatak  5 ########################################
     print_task_num(5)
@@ -397,15 +416,16 @@ def main():
     points = []
     for _ in range(niters):
         points.append([random.random() * 100 - 50, random.random() * 100 - 50])
-    
+
     found = 0
 
     for point in tqdm(points):
         min_point = nelder_mead_simplex(point, tf6, verbose=False)
         if abs(tf6(*min_point)) < 10e-4:
             found += 1
-    
+
     print('Vjerojatnost da je globalni optimum nađen koristeći Nelder-Mead simplex koristeći {} nasumičnih točaka je {}'.format(niters, found / niters))
+
 
 if __name__ == "__main__":
     main()

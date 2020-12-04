@@ -258,7 +258,7 @@ def gradient_descent(f, f_partial, starting_point, e=1e-6, use_golden_cut=False,
                              g in zip(current_point, gradient)]
 
         else:
-            current_point = [p + g for p, g in zip(current_point, gradient)]
+            current_point = [p - g for p, g in zip(current_point, gradient)]
 
         value_f = f(*current_point)
 

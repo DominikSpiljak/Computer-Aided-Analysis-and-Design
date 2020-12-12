@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class TargetFunction:
@@ -59,7 +60,7 @@ class Individual:
             return self.value
 
     def __eq__(self, other):
-        return self.value == other.value
+        return np.all(self.value == other.value)
 
     def __str__(self):
         value = self.value
@@ -242,6 +243,7 @@ def heuristic_cross_float():
         children = []
         for pair in comb_population:
             child_vals = []
+            pair = sorted(pair, key=lambda x: -x.fitness)
             for i in range(pair[0].value.shape[0]):
                 rand = np.random.rand()
                 child_vals.append(
@@ -291,29 +293,396 @@ def print_task_num(num):
     print()
 
 
-def main():
-    def f(x, y):
-        return 0.5 + (np.sin(np.sqrt(x ** 2 + y ** 2)) ** 2 - 0.5) / (1 + 0.001 * (x ** 2 + y ** 2)) ** 2
+def zadatak_1(f1, f3, f6, f7, no_experiments, verbose, plot_name, population_size=100, num_func_calls=1e5):
+    ######################################## zadatak  1 ########################################
 
-    tf = TargetFunction(f)
+    print_task_num(1)
+    binary_solutions = {0: [], 1: [], 2: [], 3: []}
+    float_solutions = {0: [], 1: [], 2: [], 3: []}
+    binary_no_elites = int(population_size / 3)
+    floating_no_elites = int(population_size / 2)
+    limits = [-50, 150]
+    for experiment in range(no_experiments):
+        print("Experiment {}: ".format(experiment))
+        for i, f in enumerate([f1, f3, f6, f7]):
+            print('Pokrecem rijesavanje za funkciju {}'.format(i + 1))
+            print('Binarni prikaz')
+            binary_representation = True
+            genetic = GeneticAlgorithm(
+                population_generation=generate_population(population_size=population_size, func=f, n_vars=2,
+                                                          binary_representation=binary_representation,
+                                                          limits=limits, precision=5),
+                num_func_calls=num_func_calls,
+                func=f,
+                selection=roulette_selection(
+                    elitism=True, no_elites=binary_no_elites),
+                combination=uniform_cross_binary(),
+                mutation=mutation(
+                    0.8, binary_representation=binary_representation, limits=limits),
+                solution=solution(),
+                verbose=verbose)
+
+            best_binary = genetic.evolution()
+            print('Najbolji: {}'.format(best_binary))
+            binary_solutions[i].append(best_binary.fitness)
+
+            print("--------")
+
+            print('Prikaz s pomicnom tockom')
+            binary_representation = False
+            genetic = GeneticAlgorithm(
+                population_generation=generate_population(population_size=population_size, func=f, n_vars=2,
+                                                          binary_representation=binary_representation,
+                                                          limits=limits, precision=3),
+                num_func_calls=num_func_calls,
+                func=f,
+                selection=roulette_selection(
+                    elitism=True, no_elites=floating_no_elites),
+                combination=heuristic_cross_float(),
+                mutation=mutation(
+                    0.1, binary_representation=binary_representation, limits=limits),
+                solution=solution(),
+                verbose=verbose)
+
+            best_float = genetic.evolution()
+            print('Najbolji: {}'.format(best_float))
+            float_solutions[i].append(best_float.fitness)
+
+            print('\n########################################\n')
+    if no_experiments > 1:
+        functions = ['f1', 'f3', 'f6', 'f7']
+        fig, axes = plt.subplots(2, 2)
+        fig.set_size_inches(20, 15)
+        fig.suptitle('Rezultati nakon {} eksperimenata za svaku funkciju\n\
+                      Parametri za binarni prikaz: population_size={}, precision=5, no_elites={}, cross_alg=uniform_cross_binary, mutation_prob=0.8\n\
+                      Parametri za prikaz s pomicnom tockom: population_size={}, no_elites={}, cross_alg=heuristic_cross_float, mutation_prob=0.1'.format(no_experiments, population_size, binary_no_elites, population_size, floating_no_elites))
+
+        for i, f in enumerate(functions):
+            axes_coords = [0, i] if i < 2 else [1, i - 2]
+            axes[axes_coords[0]][axes_coords[1]].set_title(
+                'Funkcija {}'.format(f))
+            axes[axes_coords[0]][axes_coords[1]].boxplot([binary_solutions[i], float_solutions[i]], labels=[
+                'Binarni prikaz', 'Prikaz s pomicnom tockom'])
+        plt.savefig(plot_name)
+        plt.show()
+
+
+def zadatak_2(f6, f7, no_experiments, verbose, plot_name, population_size=100, num_func_calls=1e5):
+    ######################################## zadatak  2 ########################################
+
+    print_task_num(2)
+
+    binary_no_elites = int(population_size / 3)
+    floating_no_elites = int(population_size / 2)
+
+    binary_solutions = {0: {1: [], 3: [], 6: [], 10: []},
+                        1: {1: [], 3: [], 6: [], 10: []}}
+    float_solutions = {0: {1: [], 3: [], 6: [], 10: []},
+                       1: {1: [], 3: [], 6: [], 10: []}}
+    limits = [-50, 150]
+    for experiment in range(no_experiments):
+        print("Experiment {}: ".format(experiment))
+        for i, n_vars in enumerate([1, 3, 6, 10]):
+            for j, f in enumerate([f6, f7]):
+                print(
+                    'Pokrecem rijesavanje za funkciju {} i dimenziju {}'.format(j + 1, n_vars))
+                print('Binarni prikaz')
+                binary_representation = True
+                genetic = GeneticAlgorithm(
+                    population_generation=generate_population(population_size=population_size, func=f, n_vars=n_vars,
+                                                              binary_representation=binary_representation,
+                                                              limits=limits, precision=5),
+                    num_func_calls=num_func_calls,
+                    func=f,
+                    selection=roulette_selection(
+                        elitism=True, no_elites=binary_no_elites),
+                    combination=uniform_cross_binary(),
+                    mutation=mutation(
+                        0.8, binary_representation=binary_representation, limits=limits),
+                    solution=solution(),
+                    verbose=verbose)
+
+                best_binary = genetic.evolution()
+                print('Najbolji: {}'.format(best_binary))
+                binary_solutions[j][n_vars].append(best_binary.fitness)
+
+                print("--------")
+
+                print('Prikaz s pomicnom tockom')
+                binary_representation = False
+                genetic = GeneticAlgorithm(
+                    population_generation=generate_population(population_size=population_size, func=f, n_vars=n_vars,
+                                                              binary_representation=binary_representation,
+                                                              limits=limits, precision=3),
+                    num_func_calls=num_func_calls,
+                    func=f,
+                    selection=roulette_selection(
+                        elitism=True, no_elites=floating_no_elites),
+                    combination=heuristic_cross_float(),
+                    mutation=mutation(
+                        0.1, binary_representation=binary_representation, limits=limits),
+                    solution=solution(),
+                    verbose=verbose)
+
+                best_float = genetic.evolution()
+                print('Najbolji: {}'.format(best_float))
+                float_solutions[j][n_vars].append(best_float.fitness)
+
+                print('\n########################################\n')
+
+    if no_experiments > 1:
+        dimensions = [1, 3, 6, 10]
+        functions = ['f6', 'f7']
+        fig, axes = plt.subplots(2, 4)
+        fig.set_size_inches(20, 15)
+        fig.suptitle('Rezultati nakon {} eksperimenata za svaku funkciju\n\
+                      Parametri za binarni prikaz: population_size={}, precision=5, no_elites={}, cross_alg=uniform_cross_binary, mutation_prob=0.8\n\
+                      Parametri za prikaz s pomicnom tockom: population_size={}, no_elites={}, cross_alg=heuristic_cross_float, mutation_prob=0.1'.format(no_experiments, population_size, binary_no_elites, population_size, floating_no_elites))
+
+        for i, dim in enumerate(dimensions):
+            for j, f in enumerate(functions):
+                axes[j][i].set_title(
+                    'Funkcija {}, Dimenzija {}'.format(f, dim))
+                axes[j][i].boxplot([binary_solutions[j][dim], float_solutions[j][dim]], labels=[
+                                   'Binarni prikaz', 'Prikaz s pomicnom tockom'])
+        plt.savefig(plot_name)
+        plt.show()
+
+
+def zadatak_3(f6, f7, no_experiments, verbose, plot_name, population_size=100, num_func_calls=1e5):
+    ######################################## zadatak  3 ########################################
+
+    print_task_num(3)
+
+    no_elites = int(population_size / 2)
+
+    binary_solutions = {0: {3: [], 6: []},
+                        1: {3: [], 6: []}}
+    float_solutions = {0: {3: [], 6: []},
+                       1: {3: [], 6: []}}
+    limits = [-50, 150]
+    for experiment in range(no_experiments):
+        print("Experiment {}: ".format(experiment))
+        for i, n_vars in enumerate([3, 6]):
+            for j, f in enumerate([f6, f7]):
+                print(
+                    'Pokrecem rijesavanje za funkciju {} i dimenziju {}'.format(j + 1, n_vars))
+                print('Binarni prikaz')
+                binary_representation = True
+                genetic = GeneticAlgorithm(
+                    population_generation=generate_population(population_size=population_size, func=f, n_vars=n_vars,
+                                                              binary_representation=binary_representation,
+                                                              limits=limits, precision=4),
+                    num_func_calls=num_func_calls,
+                    func=f,
+                    selection=roulette_selection(
+                        elitism=True, no_elites=no_elites),
+                    combination=uniform_cross_binary(),
+                    mutation=mutation(
+                        0.1, binary_representation=binary_representation, limits=limits),
+                    solution=solution(),
+                    verbose=verbose)
+
+                best_binary = genetic.evolution()
+                print('Najbolji: {}'.format(best_binary))
+                binary_solutions[j][n_vars].append(best_binary.fitness)
+
+                print("--------")
+
+                print('Prikaz s pomicnom tockom')
+                binary_representation = False
+                genetic = GeneticAlgorithm(
+                    population_generation=generate_population(population_size=population_size, func=f, n_vars=n_vars,
+                                                              binary_representation=binary_representation,
+                                                              limits=limits, precision=4),
+                    num_func_calls=num_func_calls,
+                    func=f,
+                    selection=roulette_selection(
+                        elitism=True, no_elites=no_elites),
+                    combination=heuristic_cross_float(),
+                    mutation=mutation(
+                        0.1, binary_representation=binary_representation, limits=limits),
+                    solution=solution(),
+                    verbose=verbose)
+
+                best_float = genetic.evolution()
+                print('Najbolji: {}'.format(best_float))
+                float_solutions[j][n_vars].append(best_float.fitness)
+
+                print('\n########################################\n')
+
+    if no_experiments > 1:
+        dimensions = [3, 6]
+        functions = ['f6', 'f7']
+        fig, axes = plt.subplots(2, 2)
+        fig.set_size_inches(20, 15)
+        fig.suptitle('Rezultati nakon {} eksperimenata za svaku funkciju\n\
+                      Parametri za binarni prikaz: population_size={}, precision=4, no_elites={}, cross_alg=uniform_cross_binary, mutation_prob=0.4\n\
+                      Parametri za prikaz s pomicnom tockom: population_size={}, no_elites={}, cross_alg=heuristic_cross_float, mutation_prob=0.4'.format(no_experiments, population_size, no_elites, population_size, no_elites))
+
+        for i, dim in enumerate(dimensions):
+            for j, f in enumerate(functions):
+                axes[j][i].set_title(
+                    'Funkcija {}, Dimenzija {}'.format(f, dim))
+                axes[j][i].boxplot([binary_solutions[j][dim], float_solutions[j][dim]], labels=[
+                                   'Binarni prikaz', 'Prikaz s pomicnom tockom'])
+        plt.savefig(plot_name)
+        plt.show()
+
+
+def zadatak_4(f6, no_experiments, verbose, plot_name, num_func_calls=1e5):
+    ######################################## zadatak  4 ########################################
+
+    print_task_num(4)
+
+    population_sizes = [30, 50, 100, 200]
+    no_elites_sizes = [int(population_size / 2)
+                       for population_size in population_sizes]
+    mutation_probs = [0.1, 0.3, 0.6, 0.9]
+
+    float_solutions = {pop: {mut: [] for mut in mutation_probs}
+                       for pop in population_sizes}
+    limits = [-50, 150]
+    for experiment in range(no_experiments):
+        print("Experiment {}: ".format(experiment))
+        for no_elites, population_size in zip(no_elites_sizes, population_sizes):
+            for mutation_prob in mutation_probs:
+                print(
+                    'Pokrecem rijesavanje za velicinu populacije {} i vjerojatnost mutacije {}'.format(population_size, mutation_prob))
+
+                print('Prikaz s pomicnom tockom')
+                binary_representation = False
+                genetic = GeneticAlgorithm(
+                    population_generation=generate_population(population_size=population_size, func=f6, n_vars=2,
+                                                              binary_representation=binary_representation,
+                                                              limits=limits, precision=4),
+                    num_func_calls=num_func_calls,
+                    func=f6,
+                    selection=roulette_selection(
+                        elitism=True, no_elites=no_elites),
+                    combination=heuristic_cross_float(),
+                    mutation=mutation(
+                        0.1, binary_representation=binary_representation, limits=limits),
+                    solution=solution(),
+                    verbose=verbose)
+
+                best_float = genetic.evolution()
+                print('Najbolji: {}'.format(best_float))
+                float_solutions[population_size][mutation_prob].append(
+                    best_float.fitness)
+
+                print('\n########################################\n')
+
+    if no_experiments > 1:
+        fig, axes = plt.subplots(4, 4)
+        fig.set_size_inches(20, 15)
+        fig.tight_layout(pad=3.0)
+        for i, population_size in enumerate(population_sizes):
+            for j, mutation_prob in enumerate(mutation_probs):
+                axes[j][i].set_title(
+                    'Velicina populacije {}, Vjerojatnost mutacije {}'.format(population_size, mutation_prob), pad=15)
+                axes[j][i].boxplot([float_solutions[population_size][mutation_prob]], labels=[
+                                   'Prikaz s pomicnom tockom'])
+        plt.savefig(plot_name)
+        plt.show()
+
+
+def zadatak_5(f6, no_experiments, verbose, plot_name, population_size=100, num_func_calls=1e5):
+    ######################################## zadatak  4 ########################################
+
+    print_task_num(5)
+    no_elites_values = [
+        int((i / 4) * population_size) - 2 for i in range(1, 5)]
+    float_solutions = {size: [] for size in no_elites_values}
+    limits = [-50, 150]
+
+    for experiment in range(no_experiments):
+        print("Experiment {}: ".format(experiment))
+        for no_elites in no_elites_values:
+            print('Pokrecem rijesavanje za broj elita {}'.format(
+                no_elites))
+
+            print('Prikaz s pomicnom tockom')
+            binary_representation = False
+            genetic = GeneticAlgorithm(
+                population_generation=generate_population(population_size=population_size, func=f6, n_vars=2,
+                                                          binary_representation=binary_representation,
+                                                          limits=limits, precision=4),
+                num_func_calls=num_func_calls,
+                func=f6,
+                selection=roulette_selection(
+                    elitism=True, no_elites=no_elites),
+                combination=heuristic_cross_float(),
+                mutation=mutation(
+                    0.1, binary_representation=binary_representation, limits=limits),
+                solution=solution(),
+                verbose=verbose)
+
+            best_float = genetic.evolution()
+            print('Najbolji: {}'.format(best_float))
+            float_solutions[no_elites].append(best_float.fitness)
+
+            print('\n########################################\n')
+
+    if no_experiments > 1:
+        fig, axes = plt.subplots(2, 2)
+        fig.set_size_inches(12, 8)
+        fig.suptitle('Rezultati nakon {} eksperimenata za svaku funkciju\n\
+                      Parametri za prikaz s pomicnom tockom: population_size={}, no_elites={}, cross_alg=heuristic_cross_float, mutation_prob=0.1'.format(no_experiments, population_size, no_elites_values))
+        for i, no_elites in enumerate(no_elites_values):
+            axes_coords = [0, i] if i < 2 else [1, i - 2]
+            axes[axes_coords[0]][axes_coords[1]].set_title(
+                'Broj elita {}'.format(no_elites))
+            axes[axes_coords[0]][axes_coords[1]].boxplot([float_solutions[no_elites]], labels=[
+                'Prikaz s pomicnom tockom'])
+        plt.savefig(plot_name)
+        plt.show()
+
+
+def find_minima_demo(f7, verbose=True):
     binary_representation = False
     limits = [-50, 150]
     genetic = GeneticAlgorithm(
-        population_generation=generate_population(population_size=1000, func=tf, n_vars=2,
+        population_generation=generate_population(population_size=100, func=f7, n_vars=2,
                                                   binary_representation=binary_representation,
                                                   limits=limits, precision=3),
-        num_func_calls=500000,
-        func=tf,
+        num_func_calls=1e5,
+        func=f7,
         selection=roulette_selection(
-            elitism=True, no_elites=500),
+            elitism=True, no_elites=25),
         combination=heuristic_cross_float(),
         mutation=mutation(
-            0.1, binary_representation=binary_representation, limits=limits),
+            0.05, binary_representation=binary_representation, limits=limits),
         solution=solution(),
-        verbose=True)
+        verbose=verbose)
 
-    best = genetic.evolution()
-    print('Best: {}'.format(best))
+    best_float = genetic.evolution()
+    print('Najbolji: {}'.format(best_float))
+
+    input('Press any key to continue')
+
+
+def main():
+    f1 = TargetFunction(lambda x1, x2: 100 * (x2 - x1 ** 2)
+                        ** 2 + (1 - x1) ** 2)
+    f3 = TargetFunction(
+        lambda *args: sum([(args[j] - j)**2 for j in range(len(args))]))
+    f6 = TargetFunction(lambda *args: .5 + (np.sin(np.sqrt(sum(np.square(args))))
+                                            ** 2 - .5) / (1 + 0.001 * sum(np.square(args))) ** 2)
+    f7 = TargetFunction(lambda *args: sum(np.square(args)) **
+                        0.25 * (1 + np.sin(50 * (sum(np.square(args))) ** 0.1) ** 2))
+
+    find_minima_demo(f6, verbose=True)
+    zadatak_1(f1, f3, f6, f7, no_experiments=3, verbose=False,
+              plot_name="prvi_demo.png", population_size=50, num_func_calls=1e4)
+    zadatak_2(f6, f7, no_experiments=3, verbose=False,
+              plot_name="drugi_demo.png", population_size=50, num_func_calls=1e4)
+    zadatak_3(f6, f7, no_experiments=3, verbose=False,
+              plot_name="treci_demo.png", population_size=50, num_func_calls=1e4)
+    zadatak_4(f6, no_experiments=3, verbose=False,
+              plot_name="cetvrti_demo.png", num_func_calls=1e4)
+    zadatak_5(f6, no_experiments=3, verbose=False,
+              plot_name="peti_demo.png", population_size=50, num_func_calls=1e4)
 
 
 if __name__ == "__main__":

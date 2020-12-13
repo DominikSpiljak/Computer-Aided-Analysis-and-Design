@@ -691,6 +691,7 @@ def run_all_experiments(f1, f3, f6, f7):
                 plot_name="peti.png", show_plot=False)
 
 
+
 def main():
     f1 = TargetFunction(lambda x1, x2: 100 * (x2 - x1 ** 2)
                         ** 2 + (1 - x1) ** 2)
@@ -701,7 +702,7 @@ def main():
     f7 = TargetFunction(lambda *args: sum(np.square(args)) **
                         0.25 * (1 + np.sin(50 * (sum(np.square(args))) ** 0.1) ** 2))
 
-    """find_minima_demo(f6, verbose=True)
+    find_minima_demo(f6, verbose=True)
     zadatak_1(f1, f3, f6, f7, no_experiments=3, verbose=False,
               plot_name="prvi_demo.png", population_size=50, num_func_calls=1e4)
     zadatak_2(f6, f7, no_experiments=3, verbose=False,
@@ -711,9 +712,9 @@ def main():
     zadatak_4(f6, no_experiments=3, verbose=False,
               plot_name="cetvrti_demo.png", num_func_calls=1e4)
     zadatak_5(f6, no_experiments=3, verbose=False,
-              plot_name="peti_demo.png", population_size=50, num_func_calls=1e4)"""
+              plot_name="peti_demo.png", population_size=50, num_func_calls=1e4)
 
-    run_all_experiments(f1, f3, f6, f7)
+    #run_all_experiments(f1, f3, f6, f7)
 
 if __name__ == "__main__":
     main()

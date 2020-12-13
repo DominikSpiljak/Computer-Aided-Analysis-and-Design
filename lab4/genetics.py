@@ -99,6 +99,7 @@ class GeneticAlgorithm:
                         print()
                     print(
                         "Found a solution with absolute value less than 1e-6, terminating.")
+                    self.func.reset()
                     return self.solution(population)
             i += 1
             if self.func.no_calls > self.num_func_calls:
@@ -107,7 +108,7 @@ class GeneticAlgorithm:
                 self.func.reset()
                 return self.solution(population)
 
-            if i % 100 == 0 and self.verbose:
+            if self.func.no_calls % 1000 == 0 and self.verbose:
                 print('Iteration: {}, Current number of function evaluations: {}'.format(
                     i, self.func.no_calls))
 
@@ -178,6 +179,18 @@ def roulette_selection(elitism=True, no_elites=1):
 
         return new_population, comb_population
 
+    return selection
+
+
+def tournament_selection(k = 3):
+    def selection(population):
+        selected = np.random.choice(population, k, replace=False)
+        selected_sorted = sorted(selected, key=lambda x: x.fitness)
+        comb_population = [[selected_sorted[0], selected_sorted[1]]]
+        population.remove(selected_sorted[-1])
+
+        return population, comb_population
+    
     return selection
 
 
@@ -293,7 +306,7 @@ def print_task_num(num):
     print()
 
 
-def zadatak_1(f1, f3, f6, f7, no_experiments, verbose, plot_name, population_size=100, num_func_calls=1e5):
+def zadatak_1(f1, f3, f6, f7, no_experiments, verbose, plot_name, population_size=100, num_func_calls=1e5, show_plot=True):
     ######################################## zadatak  1 ########################################
 
     print_task_num(1)
@@ -364,10 +377,11 @@ def zadatak_1(f1, f3, f6, f7, no_experiments, verbose, plot_name, population_siz
             axes[axes_coords[0]][axes_coords[1]].boxplot([binary_solutions[i], float_solutions[i]], labels=[
                 'Binarni prikaz', 'Prikaz s pomicnom tockom'])
         plt.savefig(plot_name)
-        plt.show()
+        if show_plot:
+            plt.show()
 
 
-def zadatak_2(f6, f7, no_experiments, verbose, plot_name, population_size=100, num_func_calls=1e5):
+def zadatak_2(f6, f7, no_experiments, verbose, plot_name, population_size=100, num_func_calls=1e5, show_plot=True):
     ######################################## zadatak  2 ########################################
 
     print_task_num(2)
@@ -446,10 +460,11 @@ def zadatak_2(f6, f7, no_experiments, verbose, plot_name, population_size=100, n
                 axes[j][i].boxplot([binary_solutions[j][dim], float_solutions[j][dim]], labels=[
                                    'Binarni prikaz', 'Prikaz s pomicnom tockom'])
         plt.savefig(plot_name)
-        plt.show()
+        if show_plot:
+            plt.show()
 
 
-def zadatak_3(f6, f7, no_experiments, verbose, plot_name, population_size=100, num_func_calls=1e5):
+def zadatak_3(f6, f7, no_experiments, verbose, plot_name, population_size=100, num_func_calls=1e5, show_plot=True):
     ######################################## zadatak  3 ########################################
 
     print_task_num(3)
@@ -527,10 +542,11 @@ def zadatak_3(f6, f7, no_experiments, verbose, plot_name, population_size=100, n
                 axes[j][i].boxplot([binary_solutions[j][dim], float_solutions[j][dim]], labels=[
                                    'Binarni prikaz', 'Prikaz s pomicnom tockom'])
         plt.savefig(plot_name)
-        plt.show()
+        if show_plot:
+            plt.show()
 
 
-def zadatak_4(f6, no_experiments, verbose, plot_name, num_func_calls=1e5):
+def zadatak_4(f6, no_experiments, verbose, plot_name, num_func_calls=1e5, show_plot=True):
     ######################################## zadatak  4 ########################################
 
     print_task_num(4)
@@ -584,23 +600,23 @@ def zadatak_4(f6, no_experiments, verbose, plot_name, num_func_calls=1e5):
                 axes[j][i].boxplot([float_solutions[population_size][mutation_prob]], labels=[
                                    'Prikaz s pomicnom tockom'])
         plt.savefig(plot_name)
-        plt.show()
+        if show_plot:
+            plt.show()
 
 
-def zadatak_5(f6, no_experiments, verbose, plot_name, population_size=100, num_func_calls=1e5):
+def zadatak_5(f6, no_experiments, verbose, plot_name, population_size=100, num_func_calls=1e5, show_plot=True):
     ######################################## zadatak  4 ########################################
 
     print_task_num(5)
-    no_elites_values = [
-        int((i / 4) * population_size) - 2 for i in range(1, 5)]
-    float_solutions = {size: [] for size in no_elites_values}
+    tournament_sizes = [3, 5, 15, 30]
+    float_solutions = {t_size: [] for t_size in tournament_sizes}
     limits = [-50, 150]
 
     for experiment in range(no_experiments):
         print("Experiment {}: ".format(experiment))
-        for no_elites in no_elites_values:
-            print('Pokrecem rijesavanje za broj elita {}'.format(
-                no_elites))
+        for t_size in tournament_sizes:
+            print('Pokrecem rijesavanje za velicinu turnira {}'.format(
+                t_size))
 
             print('Prikaz s pomicnom tockom')
             binary_representation = False
@@ -610,17 +626,16 @@ def zadatak_5(f6, no_experiments, verbose, plot_name, population_size=100, num_f
                                                           limits=limits, precision=4),
                 num_func_calls=num_func_calls,
                 func=f6,
-                selection=roulette_selection(
-                    elitism=True, no_elites=no_elites),
+                selection=tournament_selection(t_size),
                 combination=heuristic_cross_float(),
                 mutation=mutation(
-                    0.1, binary_representation=binary_representation, limits=limits),
+                    0.4, binary_representation=binary_representation, limits=limits),
                 solution=solution(),
                 verbose=verbose)
 
             best_float = genetic.evolution()
             print('Najbolji: {}'.format(best_float))
-            float_solutions[no_elites].append(best_float.fitness)
+            float_solutions[t_size].append(best_float.fitness)
 
             print('\n########################################\n')
 
@@ -628,15 +643,16 @@ def zadatak_5(f6, no_experiments, verbose, plot_name, population_size=100, num_f
         fig, axes = plt.subplots(2, 2)
         fig.set_size_inches(12, 8)
         fig.suptitle('Rezultati nakon {} eksperimenata za svaku funkciju\n\
-                      Parametri za prikaz s pomicnom tockom: population_size={}, no_elites={}, cross_alg=heuristic_cross_float, mutation_prob=0.1'.format(no_experiments, population_size, no_elites_values))
-        for i, no_elites in enumerate(no_elites_values):
+                      Parametri za prikaz s pomicnom tockom: population_size={}, tournament_sizes={}, cross_alg=heuristic_cross_float, mutation_prob=0.1'.format(no_experiments, population_size, tournament_sizes))
+        for i, t_size in enumerate(tournament_sizes):
             axes_coords = [0, i] if i < 2 else [1, i - 2]
             axes[axes_coords[0]][axes_coords[1]].set_title(
-                'Broj elita {}'.format(no_elites))
-            axes[axes_coords[0]][axes_coords[1]].boxplot([float_solutions[no_elites]], labels=[
+                'Velicina turnira {}'.format(t_size))
+            axes[axes_coords[0]][axes_coords[1]].boxplot([float_solutions[t_size]], labels=[
                 'Prikaz s pomicnom tockom'])
         plt.savefig(plot_name)
-        plt.show()
+        if show_plot:
+            plt.show()
 
 
 def find_minima_demo(f7, verbose=True):
@@ -662,6 +678,19 @@ def find_minima_demo(f7, verbose=True):
     input('Press any key to continue')
 
 
+def run_all_experiments(f1, f3, f6, f7):
+    zadatak_1(f1, f3, f6, f7, no_experiments=10, verbose=False,
+                plot_name="prvi.png", show_plot=False)
+    zadatak_2(f6, f7, no_experiments=10, verbose=False,
+                plot_name="drugi.png", show_plot=False)
+    zadatak_3(f6, f7, no_experiments=10, verbose=False,
+                plot_name="treci.png", show_plot=False)
+    zadatak_4(f6, no_experiments=10, verbose=False,
+                plot_name="cetvrti.png", show_plot=False)
+    zadatak_5(f6, no_experiments=10, verbose=False,
+                plot_name="peti.png", show_plot=False)
+
+
 def main():
     f1 = TargetFunction(lambda x1, x2: 100 * (x2 - x1 ** 2)
                         ** 2 + (1 - x1) ** 2)
@@ -672,7 +701,7 @@ def main():
     f7 = TargetFunction(lambda *args: sum(np.square(args)) **
                         0.25 * (1 + np.sin(50 * (sum(np.square(args))) ** 0.1) ** 2))
 
-    find_minima_demo(f6, verbose=True)
+    """find_minima_demo(f6, verbose=True)
     zadatak_1(f1, f3, f6, f7, no_experiments=3, verbose=False,
               plot_name="prvi_demo.png", population_size=50, num_func_calls=1e4)
     zadatak_2(f6, f7, no_experiments=3, verbose=False,
@@ -682,8 +711,9 @@ def main():
     zadatak_4(f6, no_experiments=3, verbose=False,
               plot_name="cetvrti_demo.png", num_func_calls=1e4)
     zadatak_5(f6, no_experiments=3, verbose=False,
-              plot_name="peti_demo.png", population_size=50, num_func_calls=1e4)
+              plot_name="peti_demo.png", population_size=50, num_func_calls=1e4)"""
 
+    run_all_experiments(f1, f3, f6, f7)
 
 if __name__ == "__main__":
     main()

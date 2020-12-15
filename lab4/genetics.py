@@ -1,5 +1,6 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+np.random.seed(42)
 
 
 class TargetFunction:
@@ -182,7 +183,7 @@ def roulette_selection(elitism=True, no_elites=1):
     return selection
 
 
-def tournament_selection(k = 3):
+def tournament_selection(k=3):
     def selection(population):
         selected = np.random.choice(population, k, replace=False)
         selected_sorted = sorted(selected, key=lambda x: x.fitness)
@@ -190,7 +191,7 @@ def tournament_selection(k = 3):
         population.remove(selected_sorted[-1])
 
         return population, comb_population
-    
+
     return selection
 
 
@@ -680,16 +681,15 @@ def find_minima_demo(f7, verbose=True):
 
 def run_all_experiments(f1, f3, f6, f7):
     zadatak_1(f1, f3, f6, f7, no_experiments=10, verbose=False,
-                plot_name="prvi.png", show_plot=False)
+              plot_name="prvi.png", show_plot=False)
     zadatak_2(f6, f7, no_experiments=10, verbose=False,
-                plot_name="drugi.png", show_plot=False)
+              plot_name="drugi.png", show_plot=False)
     zadatak_3(f6, f7, no_experiments=10, verbose=False,
-                plot_name="treci.png", show_plot=False)
+              plot_name="treci.png", show_plot=False)
     zadatak_4(f6, no_experiments=10, verbose=False,
-                plot_name="cetvrti.png", show_plot=False)
+              plot_name="cetvrti.png", show_plot=False)
     zadatak_5(f6, no_experiments=10, verbose=False,
-                plot_name="peti.png", show_plot=False)
-
+              plot_name="peti.png", show_plot=False)
 
 
 def main():
@@ -703,18 +703,19 @@ def main():
                         0.25 * (1 + np.sin(50 * (sum(np.square(args))) ** 0.1) ** 2))
 
     find_minima_demo(f6, verbose=True)
-    zadatak_1(f1, f3, f6, f7, no_experiments=3, verbose=False,
+    zadatak_1(f1, f3, f6, f7, no_experiments=2, verbose=False,
               plot_name="prvi_demo.png", population_size=50, num_func_calls=1e4)
-    zadatak_2(f6, f7, no_experiments=3, verbose=False,
+    zadatak_2(f6, f7, no_experiments=2, verbose=False,
               plot_name="drugi_demo.png", population_size=50, num_func_calls=1e4)
-    zadatak_3(f6, f7, no_experiments=3, verbose=False,
+    zadatak_3(f6, f7, no_experiments=2, verbose=False,
               plot_name="treci_demo.png", population_size=50, num_func_calls=1e4)
-    zadatak_4(f6, no_experiments=3, verbose=False,
+    zadatak_4(f6, no_experiments=2, verbose=False,
               plot_name="cetvrti_demo.png", num_func_calls=1e4)
-    zadatak_5(f6, no_experiments=3, verbose=False,
+    zadatak_5(f6, no_experiments=2, verbose=False,
               plot_name="peti_demo.png", population_size=50, num_func_calls=1e4)
 
     #run_all_experiments(f1, f3, f6, f7)
+
 
 if __name__ == "__main__":
     main()

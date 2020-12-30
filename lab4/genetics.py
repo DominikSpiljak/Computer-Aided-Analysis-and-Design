@@ -704,14 +704,10 @@ def main():
     find_minima_demo(f6, verbose=True)
     zadatak_1(f1, f3, f6, f7, no_experiments=2, verbose=False,
               plot_name="prvi_demo.png", population_size=50, num_func_calls=1e4)
-    zadatak_2(f6, f7, no_experiments=2, verbose=False,
-              plot_name="drugi_demo.png", population_size=50, num_func_calls=1e4)
-    zadatak_3(f6, f7, no_experiments=2, verbose=False,
-              plot_name="treci_demo.png", population_size=50, num_func_calls=1e4)
-    zadatak_4(f6, no_experiments=2, verbose=False,
-              plot_name="cetvrti_demo.png", num_func_calls=1e4)
-    zadatak_5(f6, no_experiments=2, verbose=False,
-              plot_name="peti_demo.png", population_size=50, num_func_calls=1e4)
+    #zadatak_2(f6, f7, no_experiments=2, verbose=False, plot_name="drugi_demo.png", population_size=50, num_func_calls=1e4)
+    #zadatak_3(f6, f7, no_experiments=2, verbose=False, plot_name="treci_demo.png", population_size=50, num_func_calls=1e4)
+    #zadatak_4(f6, no_experiments=2, verbose=False, plot_name="cetvrti_demo.png", num_func_calls=1e4)
+    #zadatak_5(f6, no_experiments=2, verbose=False, plot_name="peti_demo.png", population_size=50, num_func_calls=1e4)
 
     #run_all_experiments(f1, f3, f6, f7)
 

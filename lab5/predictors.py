@@ -72,12 +72,9 @@ class InverseEulerPredictor(Predictor):
     def predict(self, linear_system, num_iter_print=None):
         predicted_values = [linear_system.initial_state]
 
-        P = np.linalg.inv(
-            1 - linear_system.system_matrix * self.integration_period)
+        P = np.linalg.inv(np.eye(*linear_system.system_matrix.shape) - linear_system.system_matrix *
+                          self.integration_period)
         Q = P * self.integration_period * linear_system.external_stimulus_matrix
-
-        print(linear_system.system_matrix * self.integration_period)
-        print(P)
 
         t = self.integration_period
         i = 0
@@ -102,8 +99,7 @@ class InverseEulerPredictor(Predictor):
         return np.array(predicted_values)
 
     def calculate_step(self, predicted_values, P, Q, external_stimulus, t):
-        delta_x = P.dot(predicted_values[-1]) + Q.dot(external_stimulus(t))
-        return predicted_values[-1] + delta_x
+        return P.dot(predicted_values[-1]) + Q.dot(external_stimulus(t))
 
 
 def main():
@@ -114,7 +110,7 @@ def main():
 
     ep = InverseEulerPredictor(0.01, 0.02)
 
-    print(ep.predict(ls))
+    ep.predict(ls)
 
 
 if __name__ == "__main__":

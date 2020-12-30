@@ -1,6 +1,5 @@
 import numpy as np
 import abc
-from matrix import Matrix
 
 
 class LinearSystem:
@@ -104,12 +103,11 @@ class InverseEulerPredictor(Predictor):
 
 def main():
     ls = LinearSystem(np.array([[0, 1], [-200, -102]]), np.array([[1], [-2]]))
-    ep = EulerPredictor(0.01, 0.02)
 
+    ep = EulerPredictor(0.01, 0.02)
     ep.predict(ls)
 
     ep = InverseEulerPredictor(0.01, 0.02)
-
     ep.predict(ls)
 
 

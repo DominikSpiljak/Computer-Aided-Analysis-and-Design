@@ -49,7 +49,7 @@ class EulerPredictor(Predictor):
 
             if num_iter_print is not None:
                 if (i + 1) % num_iter_print == 0:
-                    print('System state t={}: \nx={}'.format(
+                    print('Euler prediction:\nSystem state t={}: \nx={}'.format(
                         t, predicted_value))
 
             derivation_value = linear_system.calculate(predicted_value, t)
@@ -92,7 +92,7 @@ class InverseEulerPredictor(Predictor):
             t = round(t + self.integration_period, 8)
             i += 1
 
-        print('System state t={}: \nx={}'.format(
+        print('Inverse Euler prediction:\nSystem state t={}: \nx={}'.format(
             self.max_time, predicted_value))
 
         return np.array(predicted_values)
@@ -101,14 +101,58 @@ class InverseEulerPredictor(Predictor):
         return P.dot(predicted_values[-1]) + Q.dot(external_stimulus(t))
 
 
+class TrapezoidalPredictor(Predictor):
+
+    def predict(self, linear_system, num_iter_print=None):
+        predicted_values = [linear_system.initial_state]
+
+        R = (np.linalg.inv(
+            (np.eye(*linear_system.system_matrix.shape) - linear_system.system_matrix * 1/2 * self.integration_period)).dot((
+                np.eye(*linear_system.system_matrix.shape) + linear_system.system_matrix * 1/2 * self.integration_period)))
+
+        S = (np.linalg.inv(
+            (np.eye(*linear_system.system_matrix.shape) - linear_system.system_matrix * 1/2 * self.integration_period))
+            * self.integration_period/2 * linear_system.external_stimulus_matrix)
+
+        t = self.integration_period
+        i = 0
+
+        while t <= self.max_time:
+
+            predicted_value = self.calculate_step(
+                predicted_values, R, S, linear_system.external_stimulus, t)
+            predicted_values.append(predicted_value)
+
+            if num_iter_print is not None:
+                if (i + 1) % num_iter_print == 0:
+                    print('System state t={}: \nx={}'.format(
+                        t, predicted_value))
+
+            t = round(t + self.integration_period, 8)
+            i += 1
+
+        print('Trapezoidal prediction:\nSystem state t={}: \nx={}'.format(
+            self.max_time, predicted_value))
+
+        return np.array(predicted_values)
+
+    def calculate_step(self, predicted_values, R, S, external_stimulus, t):
+        return R.dot(predicted_values[-1]) + S.dot(external_stimulus(t - self.integration_period) + external_stimulus(t))
+
+
 def main():
     ls = LinearSystem(np.array([[0, 1], [-200, -102]]), np.array([[1], [-2]]))
 
-    ep = EulerPredictor(0.01, 0.02)
+    s_e = (0.01, 0.02)
+
+    ep = EulerPredictor(*s_e)
     ep.predict(ls)
 
-    ep = InverseEulerPredictor(0.01, 0.02)
-    ep.predict(ls)
+    iep = InverseEulerPredictor(*s_e)
+    iep.predict(ls)
+
+    tp = TrapezoidalPredictor(*s_e)
+    tp.predict(ls)
 
 
 if __name__ == "__main__":
